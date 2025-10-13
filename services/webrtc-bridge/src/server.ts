@@ -78,18 +78,27 @@ app.post('/webrtc/offer', async (req: Request, res: Response) => {
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
 
-    // Wait for ICE gathering to complete
+    // Wait for ICE gathering to complete (with timeout)
     await new Promise<void>((resolve) => {
       if (pc.iceGatheringState === 'complete') {
+        console.log('ICE already gathered');
         resolve();
-      } else {
-        pc.onicegatheringstatechange = () => {
-          if (pc.iceGatheringState === 'complete') {
-            console.log('ICE gathering completed');
-            resolve();
-          }
-        };
+        return;
       }
+
+      const timeout = setTimeout(() => {
+        console.log('ICE gathering timeout, proceeding anyway');
+        resolve();
+      }, 3000);
+
+      pc.onicegatheringstatechange = () => {
+        console.log('ICE gathering state:', pc.iceGatheringState);
+        if (pc.iceGatheringState === 'complete') {
+          clearTimeout(timeout);
+          console.log('ICE gathering completed');
+          resolve();
+        }
+      };
     });
 
     // Store publisher
