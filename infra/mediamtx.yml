@@ -696,12 +696,14 @@ pathDefaults:
 # for example "~^(test1|test2)$" will match both "test1" and "test2",
 # for example "~^prefix" will match all paths that start with "prefix".
 paths:
-  # Camera stream from RTSP source
+  # Camera stream from RTSP source with H265->H264 conversion
   camera:
-    source: rtsp://Vu5RqXpP:5K5mjQfVt4HUDsrK@192.168.0.138:554/live/ch0
-    sourceOnDemand: yes
-    sourceOnDemandStartTimeout: 10s
-    sourceOnDemandCloseAfter: 10s
+    runOnDemand: >
+      ffmpeg -rtsp_transport tcp -i rtsp://Vu5RqXpP:5K5mjQfVt4HUDsrK@192.168.0.138:554/live/ch0
+      -c:v libx264 -preset ultrafast -tune zerolatency -b:v 2M -maxrate 2M -bufsize 4M
+      -c:a aac -b:a 128k
+      -f rtsp rtsp://localhost:8554/camera
+    runOnDemandRestart: yes
 
   # Settings under path "all_others" are applied to all paths that
   # do not match another entry.

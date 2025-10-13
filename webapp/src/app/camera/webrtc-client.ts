@@ -15,6 +15,34 @@ export class WebRTCClient {
       ]
     });
 
+    // Setup track handler BEFORE creating offer
+    const streamPromise = new Promise<MediaStream>((resolve, reject) => {
+      const stream = new MediaStream();
+      let trackCount = 0;
+      const timeout = setTimeout(() => {
+        reject(new Error('Connection timeout'));
+      }, 15000);
+
+      this.peerConnection!.ontrack = (event) => {
+        console.log('Received track:', event.track.kind);
+        stream.addTrack(event.track);
+        trackCount++;
+        // Resolve after receiving first track (video)
+        if (trackCount === 1) {
+          clearTimeout(timeout);
+          resolve(stream);
+        }
+      };
+
+      this.peerConnection!.onconnectionstatechange = () => {
+        console.log('Connection state:', this.peerConnection!.connectionState);
+        if (this.peerConnection!.connectionState === 'failed') {
+          clearTimeout(timeout);
+          reject(new Error('Connection failed'));
+        }
+      };
+    });
+
     // Add transceivers for receiving video/audio
     this.peerConnection.addTransceiver('video', { direction: 'recvonly' });
     this.peerConnection.addTransceiver('audio', { direction: 'recvonly' });
@@ -66,28 +94,8 @@ export class WebRTCClient {
       })
     );
 
-    // Wait for connection and track
-    return new Promise<MediaStream>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error('Connection timeout'));
-      }, 10000);
-
-      this.peerConnection!.ontrack = (event) => {
-        console.log('Received track:', event.track.kind);
-        if (event.streams && event.streams[0]) {
-          clearTimeout(timeout);
-          resolve(event.streams[0]);
-        }
-      };
-
-      this.peerConnection!.onconnectionstatechange = () => {
-        console.log('Connection state:', this.peerConnection!.connectionState);
-        if (this.peerConnection!.connectionState === 'failed') {
-          clearTimeout(timeout);
-          reject(new Error('Connection failed'));
-        }
-      };
-    });
+    // Wait for track
+    return streamPromise;
   }
 
   disconnect(): void {
