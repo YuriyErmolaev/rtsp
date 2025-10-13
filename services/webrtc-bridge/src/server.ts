@@ -78,16 +78,23 @@ app.post('/webrtc/offer', async (req: Request, res: Response) => {
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
 
+    // Wait for ICE gathering to complete
+    await new Promise<void>((resolve) => {
+      if (pc.iceGatheringState === 'complete') {
+        resolve();
+      } else {
+        pc.onicegatheringstatechange = () => {
+          if (pc.iceGatheringState === 'complete') {
+            console.log('ICE gathering completed');
+            resolve();
+          }
+        };
+      }
+    });
+
     // Store publisher
     const sessionId = Date.now().toString();
     publishers.set(sessionId, publisher);
-
-    // Handle ICE candidates
-    pc.onicecandidate = (event: any) => {
-      if (event.candidate) {
-        console.log('New ICE candidate:', event.candidate);
-      }
-    };
 
     // Cleanup on connection close
     pc.onconnectionstatechange = () => {
@@ -99,8 +106,8 @@ app.post('/webrtc/offer', async (req: Request, res: Response) => {
     };
 
     res.json({
-      sdp: answer.sdp,
-      type: answer.type,
+      sdp: pc.localDescription?.sdp,
+      type: pc.localDescription?.type,
       sessionId
     });
 
