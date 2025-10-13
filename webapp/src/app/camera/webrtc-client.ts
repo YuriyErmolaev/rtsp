@@ -9,11 +9,13 @@ export class WebRTCClient {
   }
 
   async connect(): Promise<MediaStream> {
-    this.peerConnection = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' }
-      ]
-    });
+    // Get ICE configuration from bridge (with TURN servers)
+    const iceConfigResponse = await fetch(`${environment.BRIDGE_URL}/webrtc/ice-config`);
+    const { iceServers } = await iceConfigResponse.json();
+    
+    console.log('Using ICE servers:', iceServers);
+
+    this.peerConnection = new RTCPeerConnection({ iceServers });
 
     // Setup track handler BEFORE creating offer
     const streamPromise = new Promise<MediaStream>((resolve, reject) => {
@@ -41,6 +43,12 @@ export class WebRTCClient {
           reject(new Error('Connection failed'));
         }
       };
+
+      this.peerConnection!.onicecandidate = (event) => {
+        if (event.candidate) {
+          console.log('ICE candidate:', event.candidate.candidate);
+        }
+      };
     });
 
     // Add transceivers for receiving video/audio
@@ -63,12 +71,15 @@ export class WebRTCClient {
       }, 3000);
 
       this.peerConnection!.onicegatheringstatechange = () => {
+        console.log('ICE gathering state:', this.peerConnection!.iceGatheringState);
         if (this.peerConnection!.iceGatheringState === 'complete') {
           clearTimeout(timeout);
           resolve();
         }
       };
     });
+
+    console.log('Sending offer to bridge with ICE candidates');
 
     // Send offer to bridge (JSON format like in examples)
     const response = await fetch(
@@ -90,6 +101,8 @@ export class WebRTCClient {
     }
 
     const answer = await response.json();
+    console.log('Got answer from bridge');
+
     await this.peerConnection.setRemoteDescription(
       new RTCSessionDescription({
         type: 'answer',

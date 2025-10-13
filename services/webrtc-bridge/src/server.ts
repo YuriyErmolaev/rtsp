@@ -27,11 +27,31 @@ app.use((req, res, next) => {
 
 const MEDIAMTX_URL = process.env.MEDIAMTX_URL || 'http://localhost:8889';
 
+// Build ICE servers config with TURN
+const iceServers: any[] = [
+  { urls: 'stun:stun.l.google.com:19302' }
+];
+
+if (process.env.TURN_URLS) {
+  const urls = process.env.TURN_URLS.split(',').map(url => url.trim());
+  iceServers.push({
+    urls: urls,
+    username: process.env.TURN_USER,
+    credential: process.env.TURN_PASS
+  });
+  console.log('TURN servers configured:', urls);
+}
+
 console.log('MEDIAMTX_URL:', MEDIAMTX_URL);
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', mediamtx: MEDIAMTX_URL });
+});
+
+// Get ICE configuration endpoint
+app.get('/webrtc/ice-config', (req: Request, res: Response) => {
+  res.json({ iceServers });
 });
 
 // WebRTC offer endpoint - proxy to MediaMTX
