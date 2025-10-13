@@ -1,0 +1,48 @@
+<div class="camera-container">
+  <h1>RTSP to WebRTC Camera Viewer</h1>
+
+  <div class="controls">
+    <label>
+      RTSP URL:
+      <input
+        type="text"
+        [(ngModel)]="rtspUrl"
+        [disabled]="isConnected"
+        placeholder="rtsp://192.168.0.138:554/live/ch0"
+      />
+    </label>
+
+    <button
+      *ngIf="!isConnected"
+      (click)="connect()"
+      [disabled]="isConnecting"
+    >
+      {{ isConnecting ? 'Connecting...' : 'Connect' }}
+    </button>
+
+    <button
+      *ngIf="isConnected"
+      (click)="disconnect()"
+    >
+      Disconnect
+    </button>
+  </div>
+
+  <div *ngIf="error" class="error">
+    Error: {{ error }}
+  </div>
+
+  <div class="video-wrapper">
+    <video
+      #videoElement
+      autoplay
+      playsinline
+      muted
+      [class.hidden]="!isConnected"
+    ></video>
+
+    <div *ngIf="!isConnected && !isConnecting" class="placeholder">
+      Enter RTSP URL and click Connect
+    </div>
+  </div>
+</div>
