@@ -13,7 +13,7 @@ import { WebRTCClient } from './webrtc-client';
 export class CameraComponent implements OnDestroy {
   @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
 
-  rtspUrl = 'rtsp://192.168.0.138:554/live/ch0';
+  streamPath = 'camera';
   client: WebRTCClient | null = null;
   isConnecting = false;
   isConnected = false;
@@ -24,7 +24,7 @@ export class CameraComponent implements OnDestroy {
     this.error = null;
 
     try {
-      this.client = new WebRTCClient(this.rtspUrl);
+      this.client = new WebRTCClient(this.streamPath);
       const stream = await this.client.connect();
 
       this.videoElement.nativeElement.srcObject = stream;

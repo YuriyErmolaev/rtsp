@@ -2,14 +2,13 @@ import { environment } from '../../environments/environment';
 
 export class WebRTCClient {
   private peerConnection: RTCPeerConnection | null = null;
-  private rtspUrl: string;
+  private streamPath: string;
 
-  constructor(rtspUrl: string) {
-    this.rtspUrl = rtspUrl;
+  constructor(streamPath: string) {
+    this.streamPath = streamPath;
   }
 
   async connect(): Promise<MediaStream> {
-    // Create peer connection
     this.peerConnection = new RTCPeerConnection({
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' }
@@ -20,89 +19,74 @@ export class WebRTCClient {
     this.peerConnection.addTransceiver('video', { direction: 'recvonly' });
     this.peerConnection.addTransceiver('audio', { direction: 'recvonly' });
 
-    // Create data channel (required by some implementations)
-    this.peerConnection.createDataChannel('ping');
-
-    // Create offer
     const offer = await this.peerConnection.createOffer();
     await this.peerConnection.setLocalDescription(offer);
 
-    // Wait for ICE gathering (with timeout)
+    // Wait for ICE gathering
     await new Promise<void>((resolve) => {
       if (this.peerConnection!.iceGatheringState === 'complete') {
-        console.log('ICE already gathered');
         resolve();
         return;
       }
 
       const timeout = setTimeout(() => {
-        console.log('ICE gathering timeout');
+        console.log('ICE gathering timeout, proceeding anyway');
         resolve();
-      }, 1500);
+      }, 3000);
 
       this.peerConnection!.onicegatheringstatechange = () => {
         if (this.peerConnection!.iceGatheringState === 'complete') {
           clearTimeout(timeout);
-          console.log('ICE gathering complete');
           resolve();
         }
       };
     });
 
-    console.log('Sending offer with', this.peerConnection.localDescription?.sdp?.split('\n').filter(l => l.includes('candidate')).length, 'ICE candidates');
-
-    // Send offer to bridge server
+    // Send WHEP request to MediaMTX
     const response = await fetch(
-      `${environment.BRIDGE_URL}/webrtc/offer?path=${encodeURIComponent(this.rtspUrl)}`,
+      `${environment.MEDIAMTX_URL}/${this.streamPath}/whep`,
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/sdp'
         },
-        body: JSON.stringify({
-          sdp: this.peerConnection.localDescription?.sdp,
-          type: this.peerConnection.localDescription?.type
-        })
+        body: this.peerConnection.localDescription!.sdp
       }
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to get answer: ${response.statusText}`);
+      throw new Error(`WHEP request failed: ${response.statusText}`);
     }
 
-    const answer = await response.json();
+    const answerSdp = await response.text();
+    await this.peerConnection.setRemoteDescription(
+      new RTCSessionDescription({
+        type: 'answer',
+        sdp: answerSdp
+      })
+    );
 
-    // Set remote description
-    await this.peerConnection.setRemoteDescription({
-      type: 'answer',
-      sdp: answer.sdp
-    });
-
-    // Wait for remote stream
+    // Wait for connection and track
     return new Promise<MediaStream>((resolve, reject) => {
-      const stream = new MediaStream();
+      const timeout = setTimeout(() => {
+        reject(new Error('Connection timeout'));
+      }, 10000);
 
       this.peerConnection!.ontrack = (event) => {
         console.log('Received track:', event.track.kind);
-        stream.addTrack(event.track);
-        resolve(stream);
-      };
-
-      this.peerConnection!.oniceconnectionstatechange = () => {
-        console.log('ICE connection state:', this.peerConnection!.iceConnectionState);
-        if (this.peerConnection!.iceConnectionState === 'failed') {
-          reject(new Error('ICE connection failed'));
+        if (event.streams && event.streams[0]) {
+          clearTimeout(timeout);
+          resolve(event.streams[0]);
         }
       };
 
       this.peerConnection!.onconnectionstatechange = () => {
         console.log('Connection state:', this.peerConnection!.connectionState);
+        if (this.peerConnection!.connectionState === 'failed') {
+          clearTimeout(timeout);
+          reject(new Error('Connection failed'));
+        }
       };
-
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        reject(new Error('Connection timeout'));
-      }, 10000);
     });
   }
 
