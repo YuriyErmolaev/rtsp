@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
-import { RTSPPublisher } from './rtsp_publisher';
 import dotenv from 'dotenv';
 import path from 'path';
+import fetch from 'node-fetch';
 
 // Load environment variables
 const turnPath = path.join(__dirname, '../../../infra/secrets/.env.turn');
@@ -25,109 +25,69 @@ app.use((req, res, next) => {
   next();
 });
 
-const iceServers: any[] = [];
-if (process.env.TURN_URLS) {
-  const urls = process.env.TURN_URLS.split(',').map(url => url.trim());
-  iceServers.push({
-    urls: urls,
-    username: process.env.TURN_USER,
-    credential: process.env.TURN_PASS
-  });
-}
+const MEDIAMTX_URL = process.env.MEDIAMTX_URL || 'http://localhost:8889';
 
-// Store active publishers
-const publishers = new Map<string, RTSPPublisher>();
+console.log('MEDIAMTX_URL:', MEDIAMTX_URL);
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok' });
+  res.status(200).json({ status: 'ok', mediamtx: MEDIAMTX_URL });
 });
 
-// WebRTC offer endpoint
+// WebRTC offer endpoint - proxy to MediaMTX
 app.post('/webrtc/offer', async (req: Request, res: Response) => {
   try {
     const { sdp, type } = req.body;
-    const rtspPath = req.query.path as string;
+    const streamPath = req.query.path || 'camera';
 
-    if (!rtspPath) {
-      return res.status(400).json({ error: 'Missing RTSP path parameter' });
-    }
+    console.log('Received offer for stream:', streamPath);
 
     if (!sdp || type !== 'offer') {
       return res.status(400).json({ error: 'Invalid offer' });
     }
 
-    // Build RTSP URL with credentials
-    let rtspUrl = rtspPath;
-    if (process.env.CAMERA_USER && process.env.CAMERA_PASS) {
-      const url = new URL(rtspPath);
-      url.username = process.env.CAMERA_USER;
-      url.password = process.env.CAMERA_PASS;
-      rtspUrl = url.toString();
-    }
+    // Forward offer to MediaMTX WHEP endpoint
+    const mediamtxUrl = `${MEDIAMTX_URL}/${streamPath}/whep`;
+    console.log('Forwarding to MediaMTX:', mediamtxUrl);
 
-    console.log(`Creating publisher for: ${rtspPath}`);
-
-    const publisher = new RTSPPublisher(rtspUrl, iceServers);
-    const pc = publisher.getPeerConnection();
-
-    // Set remote description (client's offer)
-    await pc.setRemoteDescription({ type: 'offer', sdp });
-
-    // Create answer
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-
-    // Wait for ICE gathering to complete (with timeout)
-    await new Promise<void>((resolve) => {
-      if (pc.iceGatheringState === 'complete') {
-        console.log('ICE already gathered');
-        resolve();
-        return;
-      }
-
-      const timeout = setTimeout(() => {
-        console.log('ICE gathering timeout, proceeding anyway');
-        resolve();
-      }, 3000);
-
-      pc.onicegatheringstatechange = () => {
-        console.log('ICE gathering state:', pc.iceGatheringState);
-        if (pc.iceGatheringState === 'complete') {
-          clearTimeout(timeout);
-          console.log('ICE gathering completed');
-          resolve();
-        }
-      };
+    const response = await fetch(mediamtxUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/sdp'
+      },
+      body: sdp
     });
 
-    // Store publisher
-    const sessionId = Date.now().toString();
-    publishers.set(sessionId, publisher);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('MediaMTX error:', response.status, errorText);
+      return res.status(response.status).json({
+        error: 'MediaMTX request failed',
+        details: errorText
+      });
+    }
 
-    // Cleanup on connection close
-    pc.onconnectionstatechange = () => {
-      console.log('Connection state:', pc.connectionState);
-      if (pc.connectionState === 'closed' || pc.connectionState === 'failed') {
-        publisher.close();
-        publishers.delete(sessionId);
-      }
-    };
+    const answerSdp = await response.text();
+    console.log('Got answer from MediaMTX');
 
+    // Return answer in JSON format (like original bridge)
     res.json({
-      sdp: pc.localDescription?.sdp,
-      type: pc.localDescription?.type,
-      sessionId
+      sdp: answerSdp,
+      type: 'answer'
     });
 
   } catch (error) {
     console.error('Error handling offer:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
 const PORT = process.env.PORT || 8085;
 app.listen(PORT, () => {
   console.log(`WebRTC bridge server running on port ${PORT}`);
-  console.log(`TURN servers configured: ${iceServers.length > 0 ? 'Yes' : 'No'}`);
+  console.log(`Endpoint: http://localhost:${PORT}/webrtc/offer`);
+  console.log(`Proxying to MediaMTX: ${MEDIAMTX_URL}`);
 });

@@ -9,18 +9,21 @@
     "dev": "ts-node src/server.ts"
   },
   "dependencies": {
-    "express": "^4.18.2",
     "@roamhq/wrtc": "^0.8.0",
     "dotenv": "^16.3.1",
+    "express": "^4.18.2",
     "fluent-ffmpeg": "^2.1.2",
+    "node-fetch": "^2.7.0",
+    "werift": "^0.22.2",
     "ws": "^8.14.2"
   },
   "devDependencies": {
     "@types/express": "^4.17.20",
     "@types/fluent-ffmpeg": "^2.1.24",
-    "@types/node": "^20.8.10",
+    "@types/node": "^20.19.21",
+    "@types/node-fetch": "^2.6.13",
     "@types/ws": "^8.5.8",
-    "typescript": "^5.2.2",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
   }
 }

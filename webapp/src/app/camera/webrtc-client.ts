@@ -2,10 +2,10 @@ import { environment } from '../../environments/environment';
 
 export class WebRTCClient {
   private peerConnection: RTCPeerConnection | null = null;
-  private streamPath: string;
+  private rtspUrl: string;
 
-  constructor(streamPath: string) {
-    this.streamPath = streamPath;
+  constructor(rtspUrl: string) {
+    this.rtspUrl = rtspUrl;
   }
 
   async connect(): Promise<MediaStream> {
@@ -70,27 +70,30 @@ export class WebRTCClient {
       };
     });
 
-    // Send WHEP request to MediaMTX
+    // Send offer to bridge (JSON format like in examples)
     const response = await fetch(
-      `${environment.MEDIAMTX_URL}/${this.streamPath}/whep`,
+      `${environment.BRIDGE_URL}/webrtc/offer?path=camera`,
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/sdp'
+          'Content-Type': 'application/json'
         },
-        body: this.peerConnection.localDescription!.sdp
+        body: JSON.stringify({
+          sdp: this.peerConnection.localDescription!.sdp,
+          type: this.peerConnection.localDescription!.type
+        })
       }
     );
 
     if (!response.ok) {
-      throw new Error(`WHEP request failed: ${response.statusText}`);
+      throw new Error(`Bridge request failed: ${response.statusText}`);
     }
 
-    const answerSdp = await response.text();
+    const answer = await response.json();
     await this.peerConnection.setRemoteDescription(
       new RTCSessionDescription({
         type: 'answer',
-        sdp: answerSdp
+        sdp: answer.sdp
       })
     );
 
