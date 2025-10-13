@@ -16,13 +16,40 @@ export class WebRTCClient {
       ]
     });
 
+    // Add transceivers for receiving video/audio
+    this.peerConnection.addTransceiver('video', { direction: 'recvonly' });
+    this.peerConnection.addTransceiver('audio', { direction: 'recvonly' });
+
+    // Create data channel (required by some implementations)
+    this.peerConnection.createDataChannel('ping');
+
     // Create offer
-    const offer = await this.peerConnection.createOffer({
-      offerToReceiveVideo: true,
-      offerToReceiveAudio: false
+    const offer = await this.peerConnection.createOffer();
+    await this.peerConnection.setLocalDescription(offer);
+
+    // Wait for ICE gathering (with timeout)
+    await new Promise<void>((resolve) => {
+      if (this.peerConnection!.iceGatheringState === 'complete') {
+        console.log('ICE already gathered');
+        resolve();
+        return;
+      }
+
+      const timeout = setTimeout(() => {
+        console.log('ICE gathering timeout');
+        resolve();
+      }, 1500);
+
+      this.peerConnection!.onicegatheringstatechange = () => {
+        if (this.peerConnection!.iceGatheringState === 'complete') {
+          clearTimeout(timeout);
+          console.log('ICE gathering complete');
+          resolve();
+        }
+      };
     });
 
-    await this.peerConnection.setLocalDescription(offer);
+    console.log('Sending offer with', this.peerConnection.localDescription?.sdp?.split('\n').filter(l => l.includes('candidate')).length, 'ICE candidates');
 
     // Send offer to bridge server
     const response = await fetch(
@@ -33,8 +60,8 @@ export class WebRTCClient {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          sdp: offer.sdp,
-          type: offer.type
+          sdp: this.peerConnection.localDescription?.sdp,
+          type: this.peerConnection.localDescription?.type
         })
       }
     );
