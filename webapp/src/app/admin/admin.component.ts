@@ -50,12 +50,18 @@ export class AdminComponent {
   error: string | null = null;
 
   onPresetChange() {
+    console.log('onPresetChange called, selectedPreset:', this.selectedPreset);
     const index = parseInt(this.selectedPreset);
+    console.log('Parsed index:', index);
     if (index >= 0 && index < this.availableServers.length) {
       const server = this.availableServers[index];
+      console.log('Selected server:', server);
       this.urls = server.urls.join(', ');
       this.username = server.username;
       this.credential = server.credential;
+      console.log('Updated urls:', this.urls);
+      console.log('Updated username:', this.username);
+      console.log('Updated credential:', this.credential);
     }
   }
 
