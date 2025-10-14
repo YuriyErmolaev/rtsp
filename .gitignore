@@ -1,6 +1,11 @@
 # Dependencies
 node_modules/
 package-lock.json
+venv/
+env/
+*.egg-info/
+__pycache__/
+*.pyc
 
 # Build outputs
 dist/
