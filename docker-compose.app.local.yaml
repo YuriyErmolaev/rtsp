@@ -1,0 +1,25 @@
+services:
+
+  # Fastapi app demo for backend
+  apiapp:
+    build:
+      context: ${APP_APIAPP_PATH:-./apiapp}
+      dockerfile: Dockerfile.local
+    image: ${APP_CONTAINER_PREFIX:-}apiapp:latest
+    container_name: ${APP_CONTAINER_PREFIX:-}apiapp
+    hostname: ${APP_CONTAINER_PREFIX:-}apiapp
+    restart: unless-stopped
+    ports:
+      - ${APP_APIAPP_PORT:-7100}:8000
+    volumes:
+      - ${AI_DATA:-./ai_data}:/ai_data:z,rw
+      - ${APP_APIAPP_PATH:-./apiapp}/init-app/server-start.sh:/usr/local/bin/server-start.sh
+      - ${APP_APIAPP_PATH:-./apiapp}/server:/server
+    environment:
+      DATA_ROOT: /ai_data
+      SRC_ROOT: /server
+      ENABLED_PATHS_CONF: /app/config/paths.json
+      ENABLED_ROUTES_CONF: /app/config/routes.json
+    command: [ "bash", "-c", "service ssh start; exec /usr/local/bin/server-start.sh" ]
+    networks:
+      - app-net

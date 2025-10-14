@@ -1,0 +1,37 @@
+name: ${APP_ENV:-app}-${APP_NAME:-aivideolab}
+
+include:
+
+
+  - ./docker-compose.app.local.yaml
+
+
+#  - ./docker-compose.siteapp.yaml
+#  - ./docker-compose.webapp.yaml
+#  - ./docker-compose.mkdocs.yaml
+
+#  - ./docker-compose.keycloak.yaml
+
+#  - ./docker-compose.postgres.yaml
+
+#  - ./docker-compose.apiapp.yaml
+
+#  - ./docker-compose.rabbitmq.yaml
+
+#  - ./docker-compose.keycloak.local.yaml
+#  - ./docker-compose.app.local.yaml
+#  - ./docker-compose.nghttpx.local.yaml
+#  - ./docker-compose.rabbitmq.local.yaml
+
+
+
+#  - ./docker-compose.mkdocs.local.yaml
+#  - ./docker-compose.postgres.yaml
+#  - ./docker-compose.kafka.yaml
+
+networks:
+  app-net:
+
+  dev-net:
+  test-net:
+  demo-net:

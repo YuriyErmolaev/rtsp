@@ -3,23 +3,26 @@ import { CommonModule } from '@angular/common';
 import { CameraComponent } from './camera/camera.component';
 import { PublisherComponent } from './publisher/publisher.component';
 import { SubscriberComponent } from './subscriber/subscriber.component';
+import { AdminComponent } from './admin/admin.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, CameraComponent, PublisherComponent, SubscriberComponent],
+  imports: [CommonModule, CameraComponent, PublisherComponent, SubscriberComponent, AdminComponent],
   template: `
     <div class="app-container">
       <nav class="tabs">
         <button (click)="activeTab = 'camera'" [class.active]="activeTab === 'camera'">Camera</button>
         <button (click)="activeTab = 'publisher'" [class.active]="activeTab === 'publisher'">Publisher</button>
         <button (click)="activeTab = 'subscriber'" [class.active]="activeTab === 'subscriber'">Subscriber</button>
+        <button (click)="activeTab = 'admin'" [class.active]="activeTab === 'admin'">Admin</button>
       </nav>
 
       <div class="tab-content">
         <app-camera *ngIf="activeTab === 'camera'"></app-camera>
         <app-publisher *ngIf="activeTab === 'publisher'"></app-publisher>
         <app-subscriber *ngIf="activeTab === 'subscriber'"></app-subscriber>
+        <app-admin *ngIf="activeTab === 'admin'"></app-admin>
       </div>
     </div>
   `,
@@ -63,5 +66,5 @@ import { SubscriberComponent } from './subscriber/subscriber.component';
   `]
 })
 export class AppComponent {
-  activeTab: 'camera' | 'publisher' | 'subscriber' = 'camera';
+  activeTab: 'camera' | 'publisher' | 'subscriber' | 'admin' = 'camera';
 }

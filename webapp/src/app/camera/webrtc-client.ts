@@ -9,8 +9,8 @@ export class WebRTCClient {
   }
 
   async connect(): Promise<MediaStream> {
-    // Get ICE configuration from bridge (with TURN servers)
-    const iceConfigResponse = await fetch(`${environment.BRIDGE_URL}/webrtc/ice-config`);
+    // Get ICE configuration from API App (with TURN servers)
+    const iceConfigResponse = await fetch(`${environment.WEBRTC_API_URL}/api/v1/webrtc/ice-config`);
     const { iceServers } = await iceConfigResponse.json();
     
     console.log('Using ICE servers:', iceServers);
@@ -81,9 +81,9 @@ export class WebRTCClient {
 
     console.log('Sending offer to bridge with ICE candidates');
 
-    // Send offer to bridge (JSON format like in examples)
+    // Send offer to API App (JSON format like in examples)
     const response = await fetch(
-      `${environment.BRIDGE_URL}/webrtc/offer?path=camera`,
+      `${environment.WEBRTC_API_URL}/api/v1/webrtc/publisher/offer?path=camera`,
       {
         method: 'POST',
         headers: {
@@ -97,11 +97,11 @@ export class WebRTCClient {
     );
 
     if (!response.ok) {
-      throw new Error(`Bridge request failed: ${response.statusText}`);
+      throw new Error(`API request failed: ${response.statusText}`);
     }
 
     const answer = await response.json();
-    console.log('Got answer from bridge');
+    console.log('Got answer from API App');
 
     await this.peerConnection.setRemoteDescription(
       new RTCSessionDescription({

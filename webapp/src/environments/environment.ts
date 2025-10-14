@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  BRIDGE_URL: 'http://localhost:8085'
+  WEBRTC_API_URL: 'http://localhost:7100'
 };

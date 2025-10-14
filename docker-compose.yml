@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  coturn1:
+    build:
+      context: ./infra/coturn
+      dockerfile: Dockerfile
+    container_name: rtsp_coturn1
+    hostname: coturn1
+    environment:
+      COTURN_REALM: "rtsp.local"
+      COTURN_USER: "webrtc"
+      COTURN_PASS: "webrtc"
+      COTURN_PORT: "3478"
+      COTURN_TLS_PORT: "5349"
+      COTURN_MIN_PORT: "49160"
+      COTURN_MAX_PORT: "49200"
+      COTURN_EXTERNAL_IP: ""
+      COTURN_INTERNAL_IP: ""
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+      - "5349:5349/tcp"
+      - "49160-49200:49160-49200/udp"
+    restart: unless-stopped
+    networks:
+      - rtsp-net
+
+  coturn2:
+    build:
+      context: ./infra/coturn
+      dockerfile: Dockerfile
+    container_name: rtsp_coturn2
+    hostname: coturn2
+    environment:
+      COTURN_REALM: "rtsp2.local"
+      COTURN_USER: "test"
+      COTURN_PASS: "test"
+      COTURN_PORT: "3479"
+      COTURN_TLS_PORT: "5350"
+      COTURN_MIN_PORT: "49201"
+      COTURN_MAX_PORT: "49240"
+      COTURN_EXTERNAL_IP: ""
+      COTURN_INTERNAL_IP: ""
+    ports:
+      - "3479:3479/udp"
+      - "3479:3479/tcp"
+      - "5350:5350/tcp"
+      - "49201-49240:49201-49240/udp"
+    restart: unless-stopped
+    networks:
+      - rtsp-net
+
+networks:
+  rtsp-net:
+    driver: bridge

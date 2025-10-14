@@ -1,0 +1,13 @@
+services:
+
+  # Angular-based webapp over angie (multistage pipeline)
+ adminapp:
+    image: ${DOCKER_REGISTRY}/${APP_ENV:-app}_adminapp:latest
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - ${ADMINAPP_HTTP_PORT:-6500}:80
+    environment:
+      TZ: "Europe/Moscow"
+    networks:
+      - ${APP_ENV:-app}-net

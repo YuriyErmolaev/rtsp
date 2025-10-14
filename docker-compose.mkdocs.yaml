@@ -1,0 +1,11 @@
+services:
+  mkdocs:
+    image: ${DOCKER_REGISTRY}/${APP_ENV:-app}_mkdocs:latest
+    pull_policy: always
+    restart: unless-stopped
+    environment:
+      SITE_URL: "https://aivideolab.ai-center.online/docs/"
+    stdin_open: true
+    tty: true
+    networks:
+      - ${APP_ENV:-app}-net

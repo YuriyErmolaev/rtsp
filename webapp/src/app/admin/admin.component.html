@@ -1,0 +1,31 @@
+<div class="admin-container">
+  <h1>Admin - TURN Server Configuration</h1>
+
+  <label>TURN API URL</label>
+  <input [(ngModel)]="turnApiUrl" placeholder="http://localhost:8000">
+
+  <button (click)="loadConfig()">Load Current Config</button>
+
+  <h2>TURN Server Configuration</h2>
+
+  <label>Preset</label>
+  <select [(ngModel)]="selectedPreset" (change)="onPresetChange()">
+    <option *ngFor="let server of availableServers; let i = index" [value]="i">
+      {{ server.name }}
+    </option>
+  </select>
+
+  <label>URLs (comma separated)</label>
+  <input [(ngModel)]="urls" placeholder="turn:host:3478?transport=udp, turn:host:3478?transport=tcp">
+
+  <label>Username</label>
+  <input [(ngModel)]="username" placeholder="username">
+
+  <label>Password</label>
+  <input [(ngModel)]="credential" placeholder="password" type="password">
+
+  <button (click)="saveConfig()" class="save-btn">Apply Configuration</button>
+
+  <div *ngIf="status" class="status">{{ status }}</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+</div>

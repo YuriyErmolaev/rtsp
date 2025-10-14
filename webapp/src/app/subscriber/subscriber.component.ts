@@ -26,7 +26,8 @@ export class SubscriberComponent {
     try {
       this.error = null;
 
-      const iceConfigResponse = await fetch(`${environment.BRIDGE_URL}/webrtc/ice-config`);
+      // Get TURN credentials from WebRTC API
+      const iceConfigResponse = await fetch(`${environment.WEBRTC_API_URL}/api/v1/webrtc/ice-config`);
       const { iceServers } = await iceConfigResponse.json();
 
       this.peerConnection = new RTCPeerConnection({ iceServers });

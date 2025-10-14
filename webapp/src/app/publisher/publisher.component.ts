@@ -32,7 +32,7 @@ export class PublisherComponent {
         return;
       }
 
-      const response = await fetch(`${environment.BRIDGE_URL}/webrtc/offer?path=${this.streamPath}`, {
+      const response = await fetch(`${environment.WEBRTC_API_URL}/api/v1/webrtc/publisher/offer?path=${this.streamPath}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(offerData)

@@ -1,0 +1,33 @@
+# ========= Generated from environment =========
+fingerprint
+realm=${COTURN_REALM}
+server-name=${COTURN_REALM}
+
+user=${COTURN_USER}:${COTURN_PASS}
+
+listening-port=${COTURN_PORT}
+# tls-listening-port=${COTURN_TLS_PORT}
+listening-ip=0.0.0.0
+relay-ip=0.0.0.0
+
+${COTURN_EXTERNAL_BLOCK}
+
+min-port=${COTURN_MIN_PORT}
+max-port=${COTURN_MAX_PORT}
+
+no-software-attribute
+no-stdout-log
+simple-log
+
+lt-cred-mech
+no-multicast-peers
+
+# (опционально) убрать TLS/DTLS совсем:
+no-tls
+no-dtls
+
+# (опционально) вырубить telnet-CLI, чтобы не ругался:
+no-cli
+
+allow-loopback-peers
+allowed-peer-ip=0.0.0.0-255.255.255.255
