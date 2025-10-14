@@ -1,92 +1,206 @@
-# RTSP to WebRTC Bridge Project
+# RTSP to WebRTC Bridge
 
-Система для передачи видео из RTSP-камеры в браузер через WebRTC.
+Система для передачи видео из RTSP-камеры в браузер через WebRTC с поддержкой TURN сервера.
+
+## Архитектура
+
+```
+Browser → WebRTC Bridge (Node.js :8085) → MediaMTX (:8889) → FFmpeg → RTSP Camera
+                ↓
+         TURN Server (coturn :3478)
+```
+
+## Компоненты
+
+- **MediaMTX** - RTSP→WebRTC сервер с H264 encoding
+- **WebRTC Bridge** - Node.js API для Offer/Answer signaling
+- **Angular WebApp** - браузерный клиент
+- **Coturn** - TURN сервер для NAT traversal
+- **FFmpeg** - конвертация H265→H264
+
+## Быстрый старт
+
+### Установка зависимостей
+
+```bash
+make install
+```
+
+### Запуск всех сервисов
+
+```bash
+make start
+```
+
+Откроется:
+- WebApp: http://localhost:4200
+- Bridge API: http://localhost:8085
+- MediaMTX: http://localhost:8889
+
+### Остановка всех сервисов
+
+```bash
+make stop
+```
+
+## Доступные команды
+
+```bash
+make help        # Показать все команды
+make install     # Установить зависимости
+make start       # Запустить все сервисы
+make stop        # Остановить все сервисы
+make restart     # Перезапустить все сервисы
+
+make mediamtx    # Запустить только MediaMTX
+make bridge      # Запустить только WebRTC bridge
+make webapp      # Запустить только Angular webapp
+make turn        # Запустить TURN сервер (требует sudo)
+
+make logs        # Показать логи всех сервисов
+make clean       # Удалить node_modules и build артефакты
+```
+
+## Конфигурация
+
+### RTSP камера
+
+`infra/secrets/.env.rtsp`:
+```env
+CAMERA_URL=rtsp://192.168.0.138:554
+CAMERA_USER=Vu5RqXpP
+CAMERA_PASS=5K5mjQfVt4HUDsrK
+```
+
+### TURN сервер
+
+`infra/secrets/.env.turn`:
+```env
+TURN_URLS=turn:localhost:3478?transport=udp,turn:localhost:3478?transport=tcp
+TURN_USER=webrtc
+TURN_PASS=webrtc
+```
+
+`infra/turnserver.conf`:
+```
+listening-port=3478
+fingerprint
+lt-cred-mech
+user=webrtc:webrtc
+realm=rtsp-webrtc
+external-ip=127.0.0.1
+```
+
+### MediaMTX
+
+`infra/mediamtx.yml` - конфигурация путей и RTSP источников:
+```yaml
+paths:
+  camera:
+    runOnDemand: ffmpeg -i rtsp://... -c:v libx264 ... -f rtsp rtsp://localhost:8554/camera
+```
 
 ## Структура проекта
 
 ```
 .
-├── infra/secrets/          # Конфигурационные файлы
-│   ├── .env.turn          # TURN server credentials
-│   └── .env.rtsp          # Camera credentials
+├── Makefile                    # Команды для управления проектом
+├── infra/
+│   ├── secrets/
+│   │   ├── .env.turn          # TURN credentials
+│   │   └── .env.rtsp          # RTSP camera credentials
+│   ├── mediamtx               # MediaMTX binary
+│   ├── mediamtx.yml           # MediaMTX config
+│   └── turnserver.conf        # Coturn config
 ├── services/
-│   └── webrtc-bridge/     # Node.js WebRTC bridge сервис
-└── webapp/                # Angular клиент
-```
-
-## Установка и запуск
-
-### 1. WebRTC Bridge Service
-
-```bash
-cd services/webrtc-bridge
-npm install
-npm run dev
-```
-
-Сервис запустится на `http://localhost:8085`
-
-### 2. Angular Client
-
-```bash
-cd webapp
-npm install
-npm start
-```
-
-Клиент откроется на `http://localhost:4200`
-
-## Конфигурация
-
-### infra/secrets/.env.turn
-```env
-TURN_URLS=turn:turn.example.com:3478
-TURN_USER=username
-TURN_PASS=password
-```
-
-### infra/secrets/.env.rtsp
-```env
-CAMERA_URL=rtsp://192.168.0.138:554
-CAMERA_USER=admin
-CAMERA_PASS=admin
+│   └── webrtc-bridge/         # Node.js WebRTC signaling server
+│       ├── src/
+│       │   └── server.ts      # Express API (Offer/Answer proxy)
+│       └── package.json
+└── webapp/                    # Angular frontend
+    ├── src/
+    │   └── app/camera/
+    │       ├── camera.component.ts
+    │       └── webrtc-client.ts
+    └── package.json
 ```
 
 ## Использование
 
-1. Запустите bridge-сервис
-2. Запустите Angular клиент
-3. Откройте браузер на `http://localhost:4200`
-4. Введите RTSP URL камеры (по умолчанию: `rtsp://192.168.0.138:554`)
-5. Нажмите "Connect"
+1. Запустить все сервисы: `make start`
+2. Открыть http://localhost:4200
+3. Нажать "Connect"
+4. Видео с камеры появится в браузере
+
+## API Endpoints
+
+### WebRTC Bridge (:8085)
+
+- `GET /health` - Health check
+- `GET /webrtc/ice-config` - Получить ICE configuration (STUN/TURN)
+- `POST /webrtc/offer` - Отправить WebRTC Offer, получить Answer
+
+### MediaMTX (:8889)
+
+- `POST /{path}/whep` - WHEP endpoint для WebRTC
 
 ## Требования
 
-- Node.js 18+ (для bridge-сервиса)
-- Node.js 20+ (для Angular клиента)
-- FFmpeg (устанавливается автоматически в Docker)
-
-## Docker
-
-Для запуска bridge-сервиса в Docker:
-
-```bash
-cd services/webrtc-bridge
-docker build -t webrtc-bridge .
-docker run -p 8085:8085 \
-  --env-file ../../infra/secrets/.env.turn \
-  --env-file ../../infra/secrets/.env.rtsp \
-  webrtc-bridge
-```
+- Node.js 18+
+- FFmpeg
+- Coturn (для TURN)
+- Make
 
 ## Troubleshooting
 
-### RTSP поток не подключается
-- Проверьте IP камеры: `ping 192.168.0.138`
-- Проверьте порт RTSP: `nmap -p 554 192.168.0.138`
-- Проверьте RTSP URL в VLC: Media → Open Network Stream
+### Видео не показывается
 
-### WebRTC не работает
-- Проверьте, что bridge-сервис запущен: `curl http://localhost:8085/health`
-- Проверьте консоль браузера на ошибки
-- Убедитесь, что CORS включён в bridge-сервисе
+```bash
+# Проверить все сервисы
+make stop && make start
+
+# Проверить логи в браузере (F12 → Console)
+# Должны быть "typ relay" ICE candidates
+```
+
+### RTSP камера недоступна
+
+```bash
+# Проверить подключение к камере
+ffmpeg -i rtsp://Vu5RqXpP:5K5mjQfVt4HUDsrK@192.168.0.138:554/live/ch0 -f null -
+
+# Проверить VLC: Media → Open Network Stream
+```
+
+### TURN не работает
+
+```bash
+# Проверить что coturn запущен
+sudo lsof -i:3478
+
+# Запустить TURN сервер
+make turn
+```
+
+## Разработка
+
+### Запуск отдельных компонентов
+
+```bash
+# Только MediaMTX
+make mediamtx
+
+# Только Bridge
+make bridge
+
+# Только WebApp
+make webapp
+```
+
+### Логи
+
+Логи MediaMTX и Bridge выводятся в stdout. Логи TURN сервера в `/tmp/turnserver.log`.
+
+## Лицензия
+
+MIT
