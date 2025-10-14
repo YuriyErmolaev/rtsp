@@ -25,9 +25,11 @@ install:
 	@echo "Done!"
 
 # Start all services
-start:
+start: stop
 	@echo "Starting all services..."
+	@sleep 1
 	@make -j3 mediamtx bridge webapp
+	@echo ""
 	@echo "All services started!"
 	@echo ""
 	@echo "WebApp:    http://localhost:4200"
@@ -37,9 +39,12 @@ start:
 # Stop all services
 stop:
 	@echo "Stopping all services..."
-	-@pkill mediamtx 2>/dev/null || true
-	-@pkill -f "ng serve" 2>/dev/null || true
-	-@pkill -f "ts-node.*server.ts" 2>/dev/null || true
+	-@pkill -9 mediamtx 2>/dev/null || true
+	-@pkill -9 -f "ng serve" 2>/dev/null || true
+	-@pkill -9 -f "ts-node" 2>/dev/null || true
+	-@pkill -9 -f "npm.*dev" 2>/dev/null || true
+	-@pkill -9 -f "npm start" 2>/dev/null || true
+	@sleep 1
 	-@lsof -ti:4200 2>/dev/null | xargs kill -9 2>/dev/null || true
 	-@lsof -ti:8085 2>/dev/null | xargs kill -9 2>/dev/null || true
 	-@lsof -ti:8889 2>/dev/null | xargs kill -9 2>/dev/null || true
@@ -63,7 +68,7 @@ bridge:
 # Start Angular webapp
 webapp:
 	@echo "Starting Angular webapp..."
-	cd webapp && npm start
+	cd webapp && CI=true npm start
 
 # Start TURN server (requires sudo)
 turn:
