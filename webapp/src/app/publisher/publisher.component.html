@@ -1,0 +1,18 @@
+<div class="publisher-container">
+  <h1>Publisher (C1)</h1>
+  <p>Вставьте Offer от C2, отправьте на сервер и скопируйте Answer обратно в C2.</p>
+
+  <label>Путь к источнику видео (RTSP camera path)</label>
+  <input [(ngModel)]="streamPath" placeholder="camera">
+
+  <h2>Offer (вставьте от C2)</h2>
+  <textarea [(ngModel)]="offer" rows="10" placeholder="Вставьте JSON с Offer от Subscriber"></textarea>
+
+  <button (click)="postOffer()">POST /offer → Show Answer</button>
+
+  <h2>Answer (скопируйте для C2)</h2>
+  <textarea readonly [value]="answer" rows="10"></textarea>
+
+  <h2>Status</h2>
+  <div *ngIf="error" class="error">{{ error }}</div>
+</div>

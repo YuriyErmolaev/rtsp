@@ -127,10 +127,50 @@ paths:
 
 ## Использование
 
+### Режим 1: Автоматическое подключение (Camera)
+
 1. Запустить все сервисы: `make start`
 2. Открыть http://localhost:4200
-3. Нажать "Connect"
-4. Видео с камеры появится в браузере
+3. Вкладка **Camera**
+4. Нажать **Connect**
+5. Видео с RTSP камеры появится в браузере
+
+### Режим 2: Ручной Offer/Answer (Publisher/Subscriber)
+
+WebApp предоставляет 3 вкладки:
+- **Camera** - автоматическое подключение к RTSP камере
+- **Publisher** - отправка видео с веб-камеры (ручной Offer/Answer)
+- **Subscriber** - получение видео из RTSP камеры (ручной Offer/Answer)
+
+#### Publisher (отправка видео с веб-камеры):
+
+1. Откройте http://localhost:4200
+2. Перейдите на вкладку **Publisher**
+3. Нажмите **Create Offer** (запросит доступ к камере/микрофону)
+4. Скопируйте JSON из поля "Offer (copy this)"
+5. Передайте Offer на сервер/другое устройство для получения Answer
+6. Вставьте Answer в поле "Answer (paste here)" на Publisher
+7. Нажмите **Set Answer**
+8. Соединение установлено, видео с веб-камеры передаётся ✓
+
+#### Subscriber (получение видео из RTSP камеры):
+
+1. Откройте http://localhost:4200 (можно в другой вкладке/браузере)
+2. Перейдите на вкладку **Subscriber**
+3. Нажмите **Create Offer**
+4. Скопируйте JSON из поля "Offer (copy this)"
+5. Отправьте Offer на bridge: `POST http://localhost:8085/webrtc/offer?path=camera`
+6. Получите Answer от bridge
+7. Вставьте Answer в поле "Answer (paste here)" на Subscriber
+8. Нажмите **Set Answer**
+9. Видео с RTSP камеры появится в видео-плеере ✓
+
+**Пример curl для получения Answer:**
+```bash
+curl -X POST http://localhost:8085/webrtc/offer?path=camera \
+  -H "Content-Type: application/json" \
+  -d '{"type":"offer","sdp":"<PASTE_OFFER_SDP_HERE>"}'
+```
 
 ## API Endpoints
 
