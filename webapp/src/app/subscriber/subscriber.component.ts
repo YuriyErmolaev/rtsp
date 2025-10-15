@@ -14,7 +14,6 @@ export class SubscriberComponent {
   @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
 
   peerConnection: RTCPeerConnection | null = null;
-  streamPath: string = 'camera';
 
   offer: string = '';
   answer: string = '';

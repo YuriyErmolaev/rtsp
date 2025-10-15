@@ -3,6 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../environments/environment';
 
+interface CameraPreset {
+  name: string;
+  path: string;
+}
+
 @Component({
   selector: 'app-publisher',
   standalone: true,
@@ -11,10 +16,29 @@ import { environment } from '../../environments/environment';
   styleUrls: ['./publisher.component.css']
 })
 export class PublisherComponent {
-  streamPath: string = 'camera';
+  availableCameras: CameraPreset[] = [
+    {
+      name: 'Camera 1 (Default)',
+      path: 'rtsp://Vu5RqXpP:5K5mjQfVt4HUDsrK@192.168.0.138:554/live/ch0'
+    },
+    {
+      name: 'Test Pattern',
+      path: 'testsrc'
+    }
+  ];
+
+  selectedPreset: string = '0';
+  streamPath: string = 'rtsp://Vu5RqXpP:5K5mjQfVt4HUDsrK@192.168.0.138:554/live/ch0';
   offer: string = '';
   answer: string = '';
   error: string | null = null;
+
+  onPresetChange() {
+    const index = parseInt(this.selectedPreset);
+    if (index >= 0 && index < this.availableCameras.length) {
+      this.streamPath = this.availableCameras[index].path;
+    }
+  }
 
   async postOffer() {
     try {

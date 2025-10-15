@@ -2,8 +2,15 @@
   <h1>Publisher (C1)</h1>
   <p>Вставьте Offer от C2, отправьте на сервер и скопируйте Answer обратно в C2.</p>
 
-  <label>Путь к источнику видео (RTSP camera path)</label>
-  <input [(ngModel)]="streamPath" placeholder="camera">
+  <label>Camera Source</label>
+  <select [(ngModel)]="selectedPreset" (change)="onPresetChange()">
+    <option *ngFor="let camera of availableCameras; let i = index" [value]="i">
+      {{ camera.name }}
+    </option>
+  </select>
+
+  <label>Stream Path</label>
+  <input [(ngModel)]="streamPath" placeholder="rtsp://...">
 
   <h2>Offer (вставьте от C2)</h2>
   <textarea [(ngModel)]="offer" rows="10" placeholder="Вставьте JSON с Offer от Subscriber"></textarea>

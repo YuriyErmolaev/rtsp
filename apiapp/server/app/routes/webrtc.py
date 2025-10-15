@@ -10,8 +10,9 @@ logging.basicConfig(level=logging.INFO)
 
 router = APIRouter()
 
-# Store peer connections
+# Store peer connections and media players
 pcs = set()
+players = {}
 
 # TURN configuration storage
 turn_credentials: dict = {
@@ -87,6 +88,8 @@ async def publisher_offer(request: Request, path: Optional[str] = None):
         if pc.connectionState == "failed" or pc.connectionState == "closed":
             await pc.close()
             pcs.discard(pc)
+            if pc in players:
+                del players[pc]
 
     # Get RTSP path
     if not path or path == "camera":
@@ -98,6 +101,9 @@ async def publisher_offer(request: Request, path: Optional[str] = None):
     try:
         # Create media player from RTSP stream or test source
         player = MediaPlayer(rtsp_url)
+
+        # Store player to prevent garbage collection
+        players[pc] = player
 
         if player.audio:
             pc.addTrack(player.audio)
@@ -120,6 +126,8 @@ async def publisher_offer(request: Request, path: Optional[str] = None):
         logging.error(f"Publisher error: {e}")
         await pc.close()
         pcs.discard(pc)
+        if pc in players:
+            del players[pc]
         raise
 
 
