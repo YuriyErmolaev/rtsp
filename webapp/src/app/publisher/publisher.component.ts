@@ -29,6 +29,7 @@ export class PublisherComponent {
 
   selectedPreset: string = '0';
   streamPath: string = 'rtsp://Vu5RqXpP:5K5mjQfVt4HUDsrK@192.168.0.138:554/live/ch0';
+  offerEndpoint: string = '/webrtc/offer';
   offer: string = '';
   answer: string = '';
   error: string | null = null;
@@ -56,7 +57,7 @@ export class PublisherComponent {
         return;
       }
 
-      const response = await fetch(`${environment.WEBRTC_API_URL}/api/v1/webrtc/publisher/offer?path=${this.streamPath}`, {
+      const response = await fetch(`${environment.apiUrl}${this.offerEndpoint}?path=${this.streamPath}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(offerData)

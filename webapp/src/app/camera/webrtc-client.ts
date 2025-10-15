@@ -10,7 +10,7 @@ export class WebRTCClient {
 
   async connect(): Promise<MediaStream> {
     // Get ICE configuration from API App (with TURN servers)
-    const iceConfigResponse = await fetch(`${environment.WEBRTC_API_URL}/api/v1/webrtc/ice-config`);
+    const iceConfigResponse = await fetch(`${environment.apiUrl}/webrtc/ice-config`);
     const { iceServers } = await iceConfigResponse.json();
     
     console.log('Using ICE servers:', iceServers);
@@ -83,7 +83,7 @@ export class WebRTCClient {
 
     // Send offer to API App (JSON format like in examples)
     const response = await fetch(
-      `${environment.WEBRTC_API_URL}/api/v1/webrtc/publisher/offer?path=camera`,
+      `${environment.apiUrl}/webrtc/offer?path=camera`,
       {
         method: 'POST',
         headers: {

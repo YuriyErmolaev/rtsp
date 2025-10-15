@@ -12,6 +12,9 @@
   <label>Stream Path</label>
   <input [(ngModel)]="streamPath" placeholder="rtsp://...">
 
+  <label>Offer endpoint (relative URL)</label>
+  <input [(ngModel)]="offerEndpoint" placeholder="/webrtc/offer">
+
   <h2>Offer (вставьте от C2)</h2>
   <textarea [(ngModel)]="offer" rows="10" placeholder="Вставьте JSON с Offer от Subscriber"></textarea>
 

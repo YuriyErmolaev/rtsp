@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../environments/environment';
 
 interface IceServer {
   urls: string[];
@@ -23,7 +24,7 @@ interface TurnServer {
   styleUrl: './admin.component.css'
 })
 export class AdminComponent {
-  turnApiUrl: string = 'http://localhost:7100/api/v1/webrtc';
+
 
   availableServers: TurnServer[] = [
     {
@@ -82,7 +83,7 @@ export class AdminComponent {
         credential: this.credential || undefined
       };
 
-      const response = await fetch(`${this.turnApiUrl}/turn-config`, {
+      const response = await fetch(`${environment.apiUrl}/webrtc/turn-config`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -109,7 +110,7 @@ export class AdminComponent {
       this.error = null;
       this.status = 'Loading...';
 
-      const response = await fetch(`${this.turnApiUrl}/turn-config`);
+      const response = await fetch(`${environment.apiUrl}/webrtc/turn-config`);
 
       if (!response.ok) {
         throw new Error(`Failed to load: ${response.statusText}`);

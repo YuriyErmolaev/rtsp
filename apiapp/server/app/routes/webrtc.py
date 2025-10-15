@@ -70,7 +70,7 @@ async def get_turn_config():
 
 # ========== WebRTC Publisher Endpoint ==========
 
-@router.post("/publisher/offer")
+@router.post("/offer")
 async def publisher_offer(request: Request, path: Optional[str] = None):
     """
     Publisher: Handle WebRTC offer from browser and return answer.

@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  WEBRTC_API_URL: 'http://localhost:7100'
+  apiUrl: 'http://localhost:7100/api/v1'
 };
