@@ -1,6 +1,9 @@
 <div class="publisher-container">
   <h1>Publisher (C1)</h1>
-  <p>Вставьте Offer от C2, отправьте на сервер и скопируйте Answer обратно в C2.</p>
+  <p>Шаг 1: Получите Offer с сервера (от Subscriber).</p>
+  <p>Шаг 2: Обработайте Offer (Answer автоматически сохранится на сервере).</p>
+
+  <button (click)="fetchOffer()">Fetch Offer from Server</button>
 
   <label>Camera Source</label>
   <select [(ngModel)]="selectedPreset" (change)="onPresetChange()">
@@ -15,12 +18,12 @@
   <label>Offer endpoint (relative URL)</label>
   <input [(ngModel)]="offerEndpoint" placeholder="/webrtc/offer">
 
-  <h2>Offer (вставьте от C2)</h2>
-  <textarea [(ngModel)]="offer" rows="10" placeholder="Вставьте JSON с Offer от Subscriber"></textarea>
+  <h2>Offer (получен с сервера)</h2>
+  <textarea readonly [value]="offer" rows="10"></textarea>
 
-  <button (click)="postOffer()">POST /offer → Show Answer</button>
+  <button (click)="postOffer()" [disabled]="!offer">POST /offer → Process and Save Answer</button>
 
-  <h2>Answer (скопируйте для C2)</h2>
+  <h2>Answer (автоматически сохранён)</h2>
   <textarea readonly [value]="answer" rows="10"></textarea>
 
   <h2>Status</h2>

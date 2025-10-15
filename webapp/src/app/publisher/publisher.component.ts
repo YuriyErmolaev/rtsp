@@ -41,6 +41,32 @@ export class PublisherComponent {
     }
   }
 
+  async fetchOffer() {
+    try {
+      this.error = null;
+
+      const response = await fetch(`${environment.apiUrl}/webrtc/signaling/offer`);
+      const result = await response.json();
+
+      if (result.status === 'empty' || !result.offer) {
+        this.error = 'No offer available yet. Subscriber needs to create an offer first.';
+        return;
+      }
+
+      this.offer = JSON.stringify(result.offer, null, 2);
+
+      // Update stream path if provided
+      if (result.stream_path) {
+        this.streamPath = result.stream_path;
+      }
+
+      console.log('Offer fetched from server');
+    } catch (err: any) {
+      this.error = `Failed to fetch offer: ${err.message}`;
+      console.error('Fetch offer error:', err);
+    }
+  }
+
   async postOffer() {
     try {
       this.error = null;
@@ -67,7 +93,15 @@ export class PublisherComponent {
 
       if (answerData && answerData.type === 'answer' && answerData.sdp) {
         this.answer = JSON.stringify(answerData, null, 2);
-        console.log('Answer received');
+
+        // Automatically save answer to server
+        await fetch(`${environment.apiUrl}/webrtc/signaling/answer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(answerData)
+        });
+
+        console.log('Answer received and saved to server');
       } else {
         this.error = 'Invalid answer from server';
       }

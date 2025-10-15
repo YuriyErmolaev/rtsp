@@ -48,15 +48,48 @@ export class SubscriberComponent {
 
       await this.waitForICE();
 
-      this.offer = JSON.stringify({
+      const offerData = {
         type: this.peerConnection.localDescription!.type,
         sdp: this.peerConnection.localDescription!.sdp
-      }, null, 2);
+      };
 
-      console.log('Offer created');
+      this.offer = JSON.stringify(offerData, null, 2);
+
+      // Automatically save offer to server
+      await fetch(`${environment.apiUrl}/webrtc/signaling/offer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: offerData.type,
+          sdp: offerData.sdp,
+          stream_path: 'camera'
+        })
+      });
+
+      console.log('Offer created and saved to server');
     } catch (err: any) {
       this.error = `Failed to create offer: ${err.message}`;
       console.error('Create offer error:', err);
+    }
+  }
+
+  async fetchAnswer() {
+    try {
+      this.error = null;
+
+      const response = await fetch(`${environment.apiUrl}/webrtc/signaling/answer`);
+      const result = await response.json();
+
+      if (result.status === 'empty' || !result.answer) {
+        this.error = 'No answer available yet. Publisher needs to process the offer first.';
+        return;
+      }
+
+      this.answer = JSON.stringify(result.answer, null, 2);
+      await this.setAnswer();
+    } catch (err: any) {
+      this.error = `Failed to fetch answer: ${err.message}`;
+      console.error('Fetch answer error:', err);
     }
   }
 

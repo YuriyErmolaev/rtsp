@@ -1,17 +1,17 @@
 <div class="subscriber-container">
   <h1>Subscriber (C2)</h1>
-  <p>Шаг 1: Создайте Offer и скопируйте его для Publisher (C1).</p>
-  <p>Шаг 2: После получения Answer от C1, вставьте его и нажмите "Set Answer".</p>
+  <p>Шаг 1: Создайте Offer (автоматически сохранится на сервере).</p>
+  <p>Шаг 2: Дождитесь обработки Publisher, затем нажмите "Fetch Answer from Server".</p>
 
   <button (click)="createOffer()" [disabled]="isConnected">Create Offer</button>
 
-  <h2>Offer (скопируйте для C1)</h2>
+  <h2>Offer (автоматически сохранён)</h2>
   <textarea readonly [value]="offer" rows="10"></textarea>
 
-  <h2>Answer (вставьте от C1)</h2>
-  <textarea [(ngModel)]="answer" rows="10" placeholder="Вставьте JSON с Answer от Publisher"></textarea>
+  <button (click)="fetchAnswer()" [disabled]="!offer || isConnected">Fetch Answer from Server</button>
 
-  <button (click)="setAnswer()" [disabled]="!answer || isConnected">Set Answer</button>
+  <h2>Answer (получен с сервера)</h2>
+  <textarea readonly [value]="answer" rows="10"></textarea>
 
   <h2>Video Stream</h2>
   <video #videoElement autoplay playsinline controls muted></video>

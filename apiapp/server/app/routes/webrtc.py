@@ -14,6 +14,13 @@ router = APIRouter()
 pcs = set()
 players = {}
 
+# Store Offer/Answer for signaling
+signaling_storage: dict = {
+    "offer": None,
+    "answer": None,
+    "stream_path": None
+}
+
 # TURN configuration storage
 turn_credentials: dict = {
     "servers": [
@@ -169,6 +176,65 @@ async def subscriber_offer(request: Request):
         await pc.close()
         pcs.discard(pc)
         raise
+
+
+# ========== Signaling Storage Endpoints ==========
+
+@router.post("/signaling/offer")
+async def save_offer(request: Request):
+    """Save offer from Subscriber"""
+    global signaling_storage
+    params = await request.json()
+    signaling_storage["offer"] = {
+        "type": params.get("type"),
+        "sdp": params.get("sdp")
+    }
+    signaling_storage["stream_path"] = params.get("stream_path")
+    return {"status": "ok", "message": "Offer saved"}
+
+
+@router.get("/signaling/offer")
+async def get_offer():
+    """Get saved offer for Publisher"""
+    if signaling_storage["offer"] is None:
+        return {"status": "empty", "offer": None, "stream_path": None}
+    return {
+        "status": "ok",
+        "offer": signaling_storage["offer"],
+        "stream_path": signaling_storage["stream_path"]
+    }
+
+
+@router.post("/signaling/answer")
+async def save_answer(request: Request):
+    """Save answer from Publisher"""
+    global signaling_storage
+    params = await request.json()
+    signaling_storage["answer"] = {
+        "type": params.get("type"),
+        "sdp": params.get("sdp")
+    }
+    return {"status": "ok", "message": "Answer saved"}
+
+
+@router.get("/signaling/answer")
+async def get_answer():
+    """Get saved answer for Subscriber"""
+    if signaling_storage["answer"] is None:
+        return {"status": "empty", "answer": None}
+    return {"status": "ok", "answer": signaling_storage["answer"]}
+
+
+@router.delete("/signaling")
+async def clear_signaling():
+    """Clear all signaling data"""
+    global signaling_storage
+    signaling_storage = {
+        "offer": None,
+        "answer": None,
+        "stream_path": None
+    }
+    return {"status": "ok", "message": "Signaling data cleared"}
 
 
 @router.get("/webrtc/health")
